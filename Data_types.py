@@ -58,6 +58,8 @@ class ImageType:
         )
 
         return ImageType(surf)
+    def get_rect(self) -> pygame.Rect:
+        return self._surface.get_rect()
 
     def __repr__(self) -> str:
         return f"<ImageType size={self._surface.get_size()}>"
@@ -73,6 +75,8 @@ class ImageType:
 # Constants
 #====================================================
 FULLSCREEN = pygame.display.Info().current_w, pygame.display.Info().current_h
+BASE_SIZE = (1000, 600)
+START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 #====================================================
 # Color Definitions

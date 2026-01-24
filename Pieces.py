@@ -2,6 +2,7 @@ import sys
 from Data_types import *
 from Helper import SpriteSheet, scale
 import pygame
+import Notation
 
 
 class PieceType:
@@ -10,7 +11,6 @@ class PieceType:
         "type": "pawn",
         "symbol": "P",
         "value": 1,
-        "Position": None,
         "img": ImageType,
         "Color": ColorType,
     }
@@ -19,7 +19,6 @@ class PieceType:
         "type": "knight",
         "symbol": "N",
         "value": 3,
-        "Position":  None,
         "img": ImageType,
         "Color": ColorType,
     }
@@ -28,7 +27,6 @@ class PieceType:
         "type": "bishop",
         "symbol": "B",
         "value": 3,
-        "Position":  None,
         "img": ImageType,
         "Color": ColorType,
     }
@@ -37,7 +35,6 @@ class PieceType:
         "type": "rook",
         "symbol": "R",
         "value": 5,
-        "Position":  None,
         "img": ImageType,
         "Color": ColorType,
     }
@@ -46,7 +43,6 @@ class PieceType:
         "type": "queen",
         "symbol": "Q",
         "value": 9,
-        "Position":  None,
         "img": ImageType,
         "Color": ColorType,
     }
@@ -55,7 +51,6 @@ class PieceType:
         "type": "king",
         "symbol": "K",
         "value": float("inf"),
-        "Position":  None,
         "img": ImageType,
         "Color": ColorType,
         "can_castle_kingside": True,
@@ -81,8 +76,16 @@ class Piece:
     def __init__(self, piece_type: dict, color: str):
         self.piece_type = piece_type.copy()
         self.color = color
+        self.col = 0
+        self.row = 0
+
         if color == PieceColor.BLACK:
-            self.piece_type['img'] = self.piece_type['img'].to_black_piece().scale((60, 80))
+            self.piece_type['img'] = self.piece_type['img'].to_black_piece()
+
+    def set_position(self, col: int, row: int) -> None:
+        self.col = col
+        self.row = row
+
 
     def __repr__(self):
         return f"{self.color.capitalize()} {self.piece_type['symbol']}"

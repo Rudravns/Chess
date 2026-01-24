@@ -33,7 +33,7 @@ def scale(
 ) -> int | float | tuple[int | float, ...]:
     """Scale a value or tuple of values based on the current fullscreen resolution."""
     screen_w, screen_h = get_fullscreen()
-    base_w, base_h = 1000, 600  # Base resolution for scaling
+    base_w, base_h = BASE_SIZE  # Base resolution for scaling
 
     scale_factor = min(screen_w / base_w, screen_h / base_h)
 
