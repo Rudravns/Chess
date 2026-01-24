@@ -32,6 +32,7 @@ class App:
         self.pieces: list[list[Pieces.Piece | None]] = []
         self.Picked_up_piece: Pieces.Piece | None = None
         self.Turn = Pieces.PieceColor.WHITE
+        self.Fen = START_FEN
 
 
         for row in range(8):
@@ -60,7 +61,9 @@ class App:
            
             self.pieces.append(lane)
 
-      
+        self.engine = Translate.load_engine()
+        self.engine.SetBoardFromFEN(self.Fen)
+
         
     def run(self):
         while True:
@@ -68,7 +71,7 @@ class App:
             self.screen.fill((0, 0, 0))
 
             # drawing
-            self.draw_board(white_square_color=LIGHT_BROWN, black_square_color=DARK_BROWN)
+            self.update_board(white_square_color=LIGHT_BROWN, black_square_color=DARK_BROWN)
 
             # text
             render_text(
@@ -89,6 +92,7 @@ class App:
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
+                        print(self.Fen)
                         pygame.quit()
                         sys.exit()
                     if event.key == pygame.K_F11:
@@ -97,11 +101,11 @@ class App:
                            pygame.RESIZABLE)
 
 
-
+            self.Fen = Notation.generate_fen(self.board, self.Turn, "KQkq", "-", Notation.Black_moves, Notation.White_moves, "")
             pygame.display.flip()
 
       
-    def draw_board(self, white_square_color: ColorType, black_square_color: ColorType):
+    def update_board(self, white_square_color: ColorType, black_square_color: ColorType):
         h, w = self.screen.get_size()
         square_h = h // 8
         square_w = w // 8
@@ -109,7 +113,17 @@ class App:
         square_size = min(square_h, square_w)
         mouse_position = pygame.mouse.get_pos()
         Mouse_down = pygame.mouse.get_pressed()[0]
-        
+        self.engine.SetBoardFromFEN(self.Fen)
+        if self.Picked_up_piece:
+            moves = self.engine.GetLegalMoves(
+                self.Picked_up_piece.col,
+                self.Picked_up_piece.row
+            )
+
+            Legal_py_moves = [(m.Item1, m.Item2) for m in moves]
+        else:
+            Legal_py_moves = []
+
         piece_index = 0
         for row in range(8):
             for col in range(8):
@@ -134,9 +148,14 @@ class App:
                     piece_index += 1
                     if rect.collidepoint(mouse_position) and Mouse_down and not self.Picked_up_piece and (piece.color == self.Turn):
                         self.Picked_up_piece = piece
+                        
 
                     if piece != self.Picked_up_piece:
                         img.draw((col * square_size, row * square_size))
+                
+                for pos in Legal_py_moves:
+                    if pos[0] == col and pos[1] == row:
+                        pygame.draw.circle(self.screen, GREY, (square_size/2, square_size/2), 10)
 
         #Picked up piece display
         if self.Picked_up_piece :
@@ -167,6 +186,8 @@ class App:
                         # Capture (overwrite) target square
                         self.pieces[new_row][new_col] = self.Picked_up_piece
                         self.Picked_up_piece.set_position(new_col, new_row)
+                        self.board[new_row][new_col] = self.board[old_row][old_col]
+                        self.board[old_row][old_col] = None
 
                         # Switch turn ONLY after a valid move
                         self.Turn = (
@@ -174,6 +195,11 @@ class App:
                             if self.Turn == Pieces.PieceColor.WHITE
                             else Pieces.PieceColor.WHITE
                         )
+                        if self.Turn == Pieces.PieceColor.BLACK:
+                            Notation.Black_moves += 1
+                        else:
+                            Notation.White_moves += 1
+
 
             # Always release the piece after mouse up
             self.Picked_up_piece = None

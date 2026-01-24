@@ -1,8 +1,10 @@
+from re import S
 from typing import * # pyright: ignore[reportWildcardImportFromLibrary]
 from Data_types import *
 from Helper import *
 from Pieces import *
 import pygame
+
 
 
 #=====================================================
@@ -24,6 +26,19 @@ def parse_fen(fen: str) -> List[List[Optional[str]]]:
         board.append(board_row)
 
     return board
+
+def parse_fen_full(fen: str) -> Tuple[List[List[Optional[str]]], str, str, str, int, int, str]:
+    """Parse a full FEN string into its components."""
+    parts = fen.split(' ')
+    board = parse_fen(fen)
+    turn = parts[1]
+    castling = parts[2]
+    en_passant = parts[3]
+    halfmove_clock = int(parts[4])
+    fullmove_number = int(parts[5])
+    promotion = parts[6] if len(parts) > 6 else ""
+
+    return board, turn, castling, en_passant, halfmove_clock, fullmove_number, promotion
 
 def generate_fen(board: List[List[Optional[str]]], turn: str, castling: str, en_passant: str, halfmove_clock: int, fullmove_number: int, promotion: str) -> str:
     """Generate a FEN string from a 2D board representation."""
@@ -61,6 +76,11 @@ def convert_notation_to_position(notation: PiecePosition) -> Position:
     return (col, row)
 
 
+#====================================================
+# Game Notations
+#====================================================
+Black_moves:int = parse_fen_full(START_FEN)[4]
+White_moves:int = parse_fen_full(START_FEN)[5]
 
 if __name__ == "__main__":
     #START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

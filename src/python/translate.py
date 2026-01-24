@@ -1,6 +1,8 @@
 import os
 import sys
 from pythonnet import load
+import Notation
+import Data_types
 
 def setup_dotnet_runtime():
     """Load the .NET Core runtime before using clr."""
@@ -62,3 +64,8 @@ if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
     engine = load_engine()
     test_engine(engine)
+    print("\n\n")
+    engine.SetBoardFromFEN(Data_types.START_FEN)
+    moves = engine.GetLegalMoves(0, 1)
+    py_moves = [(m.Item1, m.Item2) for m in moves]
+    print(py_moves)

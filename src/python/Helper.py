@@ -94,9 +94,11 @@ def render_text(
 def load_image(path: str) -> pygame.Surface:
     """Load an image from disk with alpha support."""
     try:
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        DATA_DIR = os.path.join(BASE_DIR, "assets")
-        image = pygame.image.load(os.path.join(DATA_DIR, path))
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        BASE_DIR = os.path.abspath(
+            os.path.join(script_dir, "..", "..", "assets")
+        )
+        image = pygame.image.load(os.path.join(BASE_DIR, path))
         return image
     except pygame.error as e:
         raise FileNotFoundError(f"Unable to load image at '{path}': {e}") from e
