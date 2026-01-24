@@ -25,6 +25,26 @@ def parse_fen(fen: str) -> List[List[Optional[str]]]:
 
     return board
 
+def generate_fen(board: List[List[Optional[str]]], turn: str, castling: str, en_passant: str, halfmove_clock: int, fullmove_number: int, promotion: str) -> str:
+    """Generate a FEN string from a 2D board representation."""
+    fen:str = ""
+
+    for row in board:
+        empty_count = 0
+        for cell in row:
+            if cell is None:
+                empty_count += 1
+            else:
+                if empty_count > 0:
+                    fen += str(empty_count)
+                    empty_count = 0
+                fen += cell
+        if empty_count > 0:
+            fen += str(empty_count)
+        fen += '/'
+
+    return f"{fen.rstrip('/')} {turn} {castling} {en_passant} {halfmove_clock} {fullmove_number}"
+
 
 def convert_position_to_notation(col: int, row: int) -> str:
     """Convert board coordinates to standard chess notation."""
@@ -41,7 +61,11 @@ def convert_notation_to_position(notation: PiecePosition) -> Position:
     return (col, row)
 
 
+
 if __name__ == "__main__":
+    #START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     board = parse_fen(START_FEN)
     for row in board:
         print(row)
+        pass
+    print(generate_fen(board, "w", "KQkq", "-", 0, 1, ""))

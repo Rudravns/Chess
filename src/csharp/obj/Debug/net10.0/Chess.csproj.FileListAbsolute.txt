@@ -1,0 +1,5 @@
+C:\Rudransh\VS Code\Chess\Chess\obj\Debug\net10.0\Chess.GeneratedMSBuildEditorConfig.editorconfig
+C:\Rudransh\VS Code\Chess\Chess\obj\Debug\net10.0\Chess.AssemblyInfoInputs.cache
+C:\Rudransh\VS Code\Chess\Chess\obj\Debug\net10.0\Chess.AssemblyInfo.cs
+C:\Rudransh\VS Code\Chess\Chess\obj\Debug\net10.0\Chess.csproj.CoreCompileInputs.cache
+C:\Rudransh\VS Code\Chess\Chess\obj\Debug\net10.0\Chess.sourcelink.json

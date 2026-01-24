@@ -1,0 +1,11 @@
+# Visual Studio temporary files
+.vs/
+[Bb]in/
+[Ob]j/
+
+# Python temporary files
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/
