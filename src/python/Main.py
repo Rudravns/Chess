@@ -5,7 +5,7 @@ from Helper import *
 from Data_types import *
 import Pieces
 import Notation
-import translate
+import Translate
 
 
 class App:
