@@ -1,30 +1,64 @@
-import sys
 import os
-import clr # type: ignore
-from pythonnet import load # type: ignore
+import sys
+from pythonnet import load
 
-# 1. Start the .NET Runtime
-try:
+def setup_dotnet_runtime():
+    """Load the .NET Core runtime before using clr."""
     load("coreclr")
-except:
-    pass
+    import clr
+    return clr
 
-# 2. Get the ABSOLUTE path to your DLL folder
-# This goes up from 'src/python' to the 'Chess' root, then into 'bin'
-base_dir = os.path.dirname(os.path.abspath(__file__))
-dll_dir = os.path.join(base_dir, "..", "..", "bin", "Debug", "net9.0")
+def get_dll_path():
+    """Resolve the path to MoveGen.dll."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    dll_dir = os.path.abspath(
+        os.path.join(script_dir, "..", "csharp", "MoveGen", "bin", "Debug", "net9.0")
+    )
+    dll_path = os.path.join(dll_dir, "MoveGen.dll")
 
-# 3. Add to sys.path so Python can see the 'MoveGen' module
-if dll_dir not in sys.path:
-    sys.path.append(dll_dir)
+    if not os.path.exists(dll_path):
+        raise FileNotFoundError(
+            f"MoveGen.dll not found at:\n{dll_path}\n"
+            "Build the C# project first."
+        )
 
-# 4. Load the DLL
-try:
-    clr.AddReference("Chess") # type: ignore
-    import MoveGen # type: ignore
-    from MoveGen import Engine # type: ignore
-    print("✅ Success! Bridge is working.")
-    print("Moves:", list(Engine.GetLegalMoves("startpos")))
-except Exception as e:
-    print(f"❌ Error: {e}")
-    print(f"Checked path: {os.path.abspath(dll_dir)}")
+    # Add DLL folder to Python path
+    if dll_dir not in sys.path:
+        sys.path.append(dll_dir)
+
+    return dll_path
+
+def load_engine():
+    """Load the C# assembly and return an instance of Engine."""
+    clr = setup_dotnet_runtime()
+    dll_path = get_dll_path()
+
+    try:
+        clr.AddReference("MoveGen") # pyright: ignore[reportAttributeAccessIssue]
+        print("C# assembly loaded successfully.")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load C# assembly: {e}")
+
+    try:
+        from MoveGen import Engine # pyright: ignore[reportMissingImports]
+        engine = Engine()
+        print("C# Engine instantiated successfully!")
+        return engine
+    except Exception as e:
+        raise ImportError(
+            "Failed to import Engine from MoveGen. "
+            "Check namespace and class name in C# code."
+        ) from e
+
+def test_engine(engine):
+    """Run simple tests to verify integration."""
+    print(engine.Hello())
+    print("2 + 3 =", engine.Add(2, 3))
+
+# --------------------------------------------------
+# Entry point
+# --------------------------------------------------
+if __name__ == "__main__":
+    os.system("cls" if os.name == "nt" else "clear")
+    engine = load_engine()
+    test_engine(engine)

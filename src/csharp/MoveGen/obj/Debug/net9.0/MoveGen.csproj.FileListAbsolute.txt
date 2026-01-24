@@ -1,0 +1,12 @@
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\bin\Debug\net9.0\MoveGen.deps.json
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\bin\Debug\net9.0\MoveGen.dll
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\bin\Debug\net9.0\MoveGen.pdb
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\MoveGen.GeneratedMSBuildEditorConfig.editorconfig
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\MoveGen.AssemblyInfoInputs.cache
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\MoveGen.AssemblyInfo.cs
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\MoveGen.csproj.CoreCompileInputs.cache
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\MoveGen.sourcelink.json
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\MoveGen.dll
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\refint\MoveGen.dll
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\MoveGen.pdb
+C:\Rudransh\VS Code\Chess\Chess\src\csharp\MoveGen\obj\Debug\net9.0\ref\MoveGen.dll
