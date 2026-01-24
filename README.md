@@ -1,88 +1,103 @@
-Chess
+# Chess
 
-A hybrid Python + C# chess engine with a basic library for playing chess, move generation, and testing AI logic.
+A hybrid **Python + C# chess engine** with a library for playing chess, move generation, and AI integration via Python scripts.
 
-Features
+## Features
 
-C# backend for fast chess move generation and evaluation
+* **Fast C# Chess Engine**: Efficient move generation and evaluation.
+* **Python Integration**: Interact with the engine through `translate.py`.
+* **Automated Build Workflow**: `dotnet watch` rebuilds the DLL on C# code changes.
+* **AI-ready Architecture**: Easily integrate evaluation functions, heuristics, or AI logic.
+* **Testing Utilities**: Python scripts for quick engine testing and validation.
 
-Python frontend for running scripts and integrating AI
+## Project Structure
 
-Easy-to-use engine API via translate.py
-
-Fully automated workflow with hot-reload support (DLL rebuilds automatically on C# code changes)
-
-Folder Structure
-
+```
 Chess/
-├─ src/
-│  ├─ python/
-│  │  └─ translate.py      # Python script to load C# engine
-│  └─ csharp/
-│     └─ MoveGen/
-│        ├─ Engine.cs      # C# engine code
-│        ├─ MoveGen.csproj # C# project
-│        └─ bin/Debug/net9.0/MoveGen.dll
-├─ assets/                  # (Optional) images, icons, etc.
-├─ README.md
+├── src/
+│   ├── python/
+│   │   └── translate.py        # Python script to load and test the C# engine
+│   └── csharp/
+│       └── MoveGen/
+│           ├── Engine.cs       # C# engine code
+│           ├── MoveGen.csproj  # C# project
+│           └── bin/Debug/net9.0/MoveGen.dll
+├── assets/                      # (Optional) images, icons, etc.
+├── README.md
+```
 
-Getting Started
+## Requirements
 
-Requirements
+* Python 3.9–3.13
+* .NET SDK 9 or 10
+* `pythonnet` library
 
-Python 3.9–3.13
-
-.NET SDK 9 or 10
-
-pythonnet library
-
+```bash
 pip install pythonnet
+```
 
-Setup
+## Installation & Quick Start
 
-Build the C# DLL (run this in VS Code Insiders terminal inside src/csharp/MoveGen):
+1. Clone the repository:
 
+```bash
+git clone https://github.com/Rudravns/Chess.git
+cd Chess
+```
+
+2. Build the C# DLL (VS Code Insiders terminal):
+
+```powershell
+cd src/csharp/MoveGen
 dotnet watch build
+```
 
-Run the Python integration (in regular VS Code terminal):
+This rebuilds the DLL automatically whenever you save C# files.
 
+3. Run Python integration (regular VS Code terminal):
+
+```powershell
 python src/python/translate.py
+```
 
-You should see:
+Expected output:
 
+```
 C# assembly loaded successfully.
 C# Engine instantiated successfully!
 C# engine loaded successfully
 2 + 3 = 5
+```
 
-Workflow
+## Workflow
 
-Edit C# engine → Save → DLL rebuilds automatically (dotnet watch build)
+1. Edit **C# engine** → Save → DLL rebuilds automatically.
+2. Run Python scripts → Load the updated engine.
+3. Optional: Use a Python watcher script to reload the engine automatically when DLL changes.
 
-Run Python scripts → Load the updated engine instantly
+## Example Usage
 
-Optional: Use watcher.py (Python script) to auto-reload engine when DLL changes
-
-Example Usage
-
+```python
 from translate import load_engine, test_engine
 
 engine = load_engine()
 test_engine(engine)
 
-# Later, replace test_engine() with actual chess moves:
+# Later, integrate actual chess moves:
 # moves = engine.GenerateMoves(fen)
 # engine.MakeMove(move)
+```
 
-Contributing
+## Contributing
 
-Add new features to C# engine in MoveGen/Engine.cs
+* Add features to `MoveGen/Engine.cs` for move generation, AI, or evaluation.
+* Add Python scripts in `src/python` for testing or AI logic.
+* Always rebuild DLL after C# changes (`dotnet build` or watch mode).
 
-Add Python scripts or AI logic in src/python
-
-Always rebuild DLL after changes (dotnet build or watch mode)
-
-License
+## License
 
 MIT License
 
+## Author
+
+Rudransh (Rudravns)
