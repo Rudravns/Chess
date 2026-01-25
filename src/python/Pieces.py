@@ -86,7 +86,7 @@ class Piece:
         self.col = col
         self.row = row
 
-
+    
     def __repr__(self):
         return f"{self.color.capitalize()} {self.piece_type['symbol']}"
 

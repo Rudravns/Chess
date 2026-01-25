@@ -27,6 +27,7 @@ public static class FenParser
 
         return board;
     }
+
 }
 
 

@@ -57,15 +57,19 @@ def test_engine(engine):
     print(engine.Hello())
     print("2 + 3 =", engine.Add(2, 3))
 
+engine = load_engine()
+engine.SetBoardFromFEN(Data_types.START_FEN)
+
 # --------------------------------------------------
 # Entry point
 # --------------------------------------------------
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
-    engine = load_engine()
     test_engine(engine)
     print("\n\n")
     engine.SetBoardFromFEN(Data_types.START_FEN)
+    
+
     moves = engine.GetLegalMoves(0, 1)
     py_moves = [(m.Item1, m.Item2) for m in moves]
     print(py_moves)

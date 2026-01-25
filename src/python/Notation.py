@@ -1,8 +1,10 @@
+from ast import parse
 from re import S
 from typing import * # pyright: ignore[reportWildcardImportFromLibrary]
 from Data_types import *
 from Helper import *
 from Pieces import *
+import Translate
 import pygame
 
 
@@ -60,7 +62,6 @@ def generate_fen(board: List[List[Optional[str]]], turn: str, castling: str, en_
 
     return f"{fen.rstrip('/')} {turn} {castling} {en_passant} {halfmove_clock} {fullmove_number}"
 
-
 def convert_position_to_notation(col: int, row: int) -> str:
     """Convert board coordinates to standard chess notation."""
     files = 'abcdefgh'
@@ -75,17 +76,31 @@ def convert_notation_to_position(notation: PiecePosition) -> Position:
     row = ranks.index(str(notation[1]))
     return (col, row)
 
+def translate_to_board():
+    cs_board = Translate.engine.GetBoard()
 
+    py_board = [
+        [cell for cell in row]
+        for row in cs_board
+    ]
+
+    return py_board
 #====================================================
 # Game Notations
 #====================================================
 Black_moves:int = parse_fen_full(START_FEN)[4]
 White_moves:int = parse_fen_full(START_FEN)[5]
+en_passant_square:str = parse_fen_full(START_FEN)[3]
+white_king_castle = parse_fen_full(START_FEN)[2][0:2]
+black_king_castle = parse_fen_full(START_FEN)[2][2:4]
+
+
 
 if __name__ == "__main__":
     #START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    board = parse_fen(START_FEN)
+    """board = parse_fen(START_FEN)
     for row in board:
         print(row)
         pass
-    print(generate_fen(board, "w", "KQkq", "-", 0, 1, ""))
+    print(generate_fen(board, "w", "KQkq", "-", 0, 1, ""))"""
+    print(white_king_castle, black_king_castle)
