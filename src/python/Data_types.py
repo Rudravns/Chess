@@ -1,3 +1,5 @@
+from calendar import c
+import math
 from typing import * # pyright: ignore[reportWildcardImportFromLibrary]
 import pygame
 
@@ -19,6 +21,7 @@ Size: TypeAlias = tuple[int | float, int | float]
 Rect: TypeAlias = tuple[int | float, int | float, int | float, int | float]
 Position: TypeAlias = tuple[int | float, int | float]
 PiecePosition: TypeAlias = tuple[str, int]
+BOARD: TypeAlias = List[List[Optional[str]]]
 
 #====================================================
 # Class Data Types
@@ -77,6 +80,7 @@ class ImageType:
 #====================================================
 FULLSCREEN = pygame.display.Info().current_w, pygame.display.Info().current_h
 BASE_SIZE = (1000, 600)
+#START_FEN = "3k3q/8/8/8/8/8/8/P3K2N w KQkq - 0 1"
 START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 #====================================================
@@ -122,3 +126,47 @@ PROMO_OPTION_HOVER = "#5A5E78FF"
 PROMO_BORDER       = "#C8CAD6FF"
 PROMO_TEXT         = "#E6E6F0FF"
 CHECK = "#ff3838ff"
+
+
+#=======================================================
+#set the board colortype
+#=======================================================
+def get_color(style:str = "classic"):
+    
+    match style:
+        case "classic":
+            return (LIGHT_BROWN, DARK_BROWN)
+        
+        case "dark":
+            return (WHITE, BLACK)
+        
+        case "light":
+            return (ULTRA_LIGHT_GRAY, MID_GRAY)
+        
+        case "rose":
+            return (LIGHT_ROSE, DARK_ROSE)
+        
+        case "slate":
+            return (LIGHT_SLATE, DARK_SLATE)
+        
+        case "green":
+            return (LIGHT_GREEN, DARK_GREEN)
+        
+        case "moss":
+            return (MOSS_GREEN, EARTH_BROWN)
+        
+        case "blue":
+            return (LIGHT_BLUE, DARK_BLUE)
+        
+        case "neon":
+            return (NEON_CYAN, DEEP_VOID)
+        
+        case "purple":
+            return (GLOW_PURPLE, VERY_DARK_BLUE)
+        
+
+        case _:
+            return (LIGHT_BROWN, DARK_BROWN)
+        
+
+        

@@ -1,4 +1,5 @@
 # Main.py
+from pkgutil import get_data
 import pygame
 import sys,os
 from Helper import *
@@ -14,25 +15,26 @@ class App:
         pygame.init()
         pygame.display.init()
         pygame.font.init()
-
+    
         #screen init
         self.last_width, self.last_height = 1000, 600
         self.screen = pygame.display.set_mode((self.last_width, self.last_height), pygame.RESIZABLE)
         pygame.display.set_caption("Chess")
+        pygame.display.set_icon(load_image("icon.png"))
         os.environ['SDL_VIDEO_CENTERED'] = '1'
-        
+        self.settings = get_data("settings")
         #clock init
         self.clock = pygame.time.Clock()
-        self.tick = 120  # FPS
+        self.tick = self.settings["fps"]  # FPS
         self.dt = 0.0
 
         #pieces init
         Pieces.init()
-        self.board = Notation.parse_fen(START_FEN)
+        self.board = Notation.parse_fen(self.settings["FEN"])
         self.pieces: list[list[Pieces.Piece | None]] = []
         self.Picked_up_piece: Pieces.Piece | None = None
         self.Turn = Pieces.PieceColor.WHITE
-        self.Fen = START_FEN
+        self.Fen = self.settings["FEN"]
 
 
         for row in range(8):
@@ -89,13 +91,16 @@ class App:
         }
         
     def run(self):
+        
         while True:
+            if self.settings["Console debug"]:os.system('cls' if os.name == 'nt' else 'clear') 
             self.dt = self.clock.tick(self.tick) / 1000
             self.screen.fill((0, 0, 0))
 
             # drawing
-            self.update_board(white_square_color=LIGHT_BROWN, black_square_color=DARK_BROWN)
-
+            board_color = get_color(self.settings["Board style"])
+            self.update_board(white_square_color=board_color[0], black_square_color=board_color[1])
+            
             # text
             render_text(
                 text=f"FPS: {round(self.clock.get_fps())}",
@@ -125,7 +130,11 @@ class App:
                            pygame.RESIZABLE)
 
 
-            self.Fen = Notation.generate_fen(self.board, self.Turn, "KQkq", Notation.en_passant_square, Notation.Black_moves, Notation.White_moves, "")
+            self.Fen = Notation.generate_fen(self.board, ('w' if self.Turn == Pieces.PieceColor.WHITE else 'b'), "KQkq", Notation.en_passant_square, Notation.Black_moves, Notation.White_moves, "")
+            
+
+        
+            
             pygame.display.flip()
       
     def update_board(self, white_square_color: ColorType, black_square_color: ColorType):
@@ -180,6 +189,51 @@ class App:
         # -------------------------------------------------
         # Draw board + pieces
         # -------------------------------------------------
+
+        #console edition 
+        if self.settings["Console debug"]:
+            print(self.is_in_check(self.Turn))
+            print(self.Turn, '\n')
+            [print(x) for x in self.board]
+
+
+
+        # REMINDER: white = BIG
+        #           black = SMALL
+        # Make sure rook is there for the king to castle
+        
+        #starting with White king  
+
+
+        if self.Turn == Pieces.PieceColor.WHITE:
+            white_king_pos = Notation.find_piece(self.board, 'K')
+            white_king = self.pieces[white_king_pos[0]][white_king_pos[1]] # type: ignore
+
+            
+            if not self.board[7][0] == 'R':
+                white_king.piece_type["CanCastleQueenside"] = False # pyright: ignore[reportOptionalMemberAccess]
+                Translate.engine.DisableCastling(True, False)
+            if not self.board[7][7] == 'R':
+                white_king.piece_type["CanCastleKingside"] = False # pyright: ignore[reportOptionalMemberAccess]
+                Translate.engine.DisableCastling(True, True)
+
+        #now black king
+        if self.Turn == Pieces.PieceColor.BLACK:
+            black_king_pos = Notation.find_piece(self.board, 'k')
+            black_king = self.pieces[black_king_pos[0]][black_king_pos[1]] # type: ignore
+            if not self.board[0][0] == 'r':
+                black_king.piece_type["CanCastleQueenside"] = False   # pyright: ignore[reportOptionalMemberAccess]
+            Translate.engine.DisableCastling(False, False)
+            if not self.board[0][7] == 'r':
+                black_king.piece_type["CanCastleKingside"] = False  # pyright: ignore[reportOptionalMemberAccess]   
+                Translate.engine.DisableCastling(False, True)
+
+
+
+              
+                
+
+
         for row in range(8):
             for col in range(8):
                 rect = pygame.Rect(
@@ -190,6 +244,14 @@ class App:
                 )
 
                 color = white_square_color if (row + col) % 2 == 0 else black_square_color
+                
+
+                if self.is_in_check(self.Turn): # pyright: ignore[reportOptionalMemberAccess]
+                    if self.board[row][col] == "k" and self.Turn == Pieces.PieceColor.BLACK:
+                        color = CHECK
+                    elif self.board[row][col] == "K" and self.Turn == Pieces.PieceColor.WHITE:
+                        color = CHECK
+                
                 pygame.draw.rect(self.screen, pygame.Color(color), rect)
 
                 if (col, row) in legal_moves:
@@ -249,19 +311,36 @@ class App:
                 self.board[new_row][new_col] = self.board[old_row][old_col]
                 self.board[old_row][old_col] = None
                 self.Picked_up_piece.set_position(new_col, new_row)
+            
 
                 # CASTLING
                 if self.Picked_up_piece.piece_type["type"] == "king":
-                    if new_col - old_col == 2 and self.Picked_up_piece.piece_type["can_castle_queenside"]:
-                        rook = self.pieces[old_row][7]
-                        self.pieces[old_row][5] = rook
-                        self.pieces[old_row][7] = None
-                        rook.set_position(5, old_row) # pyright: ignore[reportOptionalMemberAccess]
-                    elif new_col - old_col == -2 and self.Picked_up_piece.piece_type["can_castle_kingside"]:
-                        rook = self.pieces[old_row][0]
-                        self.pieces[old_row][3] = rook
-                        self.pieces[old_row][0] = None
-                        rook.set_position(3, old_row)   # pyright: ignore[reportOptionalMemberAccess]
+                    
+                    
+                    
+                    if abs(old_col - new_col) == 2:
+
+                        if old_col > new_col and self.Picked_up_piece.piece_type["CanCastleQueenside"]:
+                            rook = self.pieces[old_row][0]
+                            rook.set_position(3, old_row) # pyright: ignore[reportOptionalMemberAccess]
+                            self.pieces[old_row][3] = rook
+                            self.board[old_row][0] = None
+                            self.pieces[old_row][0] = None
+                            self.board[old_row][3] = "R" if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else "r"
+                            
+                        elif old_col < new_col and self.Picked_up_piece.piece_type["CanCastleKingside"]:
+                            rook = self.pieces[old_row][7]
+                            rook.set_position(5, old_row) # pyright: ignore[reportOptionalMemberAccess] 
+                            self.pieces[old_row][5] = rook
+                            self.board[old_row][7] = None
+                            self.pieces[old_row][7] = None
+                            self.board[old_row][5] = "R" if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else "r"
+                            
+                    self.Picked_up_piece.piece_type["CanCastleKingside"] = False
+                    self.Picked_up_piece.piece_type["CanCastleQueenside"] = False
+                    Translate.engine.DisableCastling(True, True) if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else Translate.engine.DisableCastling(False, True)
+                    Translate.engine.DisableCastling(True, False) if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else Translate.engine.DisableCastling(False, False)
+                              
 
                 # PAWN PROMOTION
                 if (
@@ -283,26 +362,13 @@ class App:
             self.Picked_up_piece = None
 
     def draw_board_only(self, white_square_color, black_square_color, square_size):
-        king_pos = None
-
-        # Find king position
-        for row in self.pieces:
-            for p in row:
-                if p and p.piece_type['type'] == 'king' and p.color == self.Turn:
-                    king_pos = (p.col, p.row)
-                    break
+    
 
         for row in range(8):
             for col in range(8):
                 rect = pygame.Rect(col*square_size, row*square_size, square_size, square_size)
 
-                base_color = white_square_color if (row + col) % 2 == 0 else black_square_color
-
-                # Only highlight king square if in check
-                if king_pos == (col, row) and self.is_in_check(self.Turn):
-                    color = CHECK
-                else:
-                    color = base_color
+                color = white_square_color if (row + col) % 2 == 0 else black_square_color
 
                 pygame.draw.rect(self.screen, pygame.Color(color), rect)
 
@@ -310,7 +376,6 @@ class App:
                 if piece:
                     img = piece.piece_type["img"].scale((square_size, square_size))
                     img.draw(rect.topleft)
-
 
     def is_in_check(self, color):
         king = None

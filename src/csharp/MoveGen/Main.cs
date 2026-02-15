@@ -8,6 +8,7 @@ namespace MoveGen
         private List<List<string?>> board;
         private Possible_move moveGen;
 
+
         // Track castling rights
         public bool WhiteCanCastleKingside { get; private set; } = true;
         public bool WhiteCanCastleQueenside { get; private set; } = true;
@@ -68,7 +69,10 @@ namespace MoveGen
         }
 
 
-       
+       public bool SquareUnderAttack(int col, int row, bool friendlyIsWhite)
+        {
+            return moveGen.SquareUnderAttack(col, row, friendlyIsWhite);
+        }
 
         public ref List<List<string?>> GetBoard()
         {

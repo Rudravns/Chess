@@ -12,9 +12,9 @@ import pygame
 #=====================================================
 # FEN Parsing
 #=====================================================
-def parse_fen(fen: str) -> List[List[Optional[str]]]:
+def parse_fen(fen: str) ->BOARD:
     """Parse a FEN string into a 2D board representation."""
-    board: List[List[Optional[str]]] = []
+    board:BOARD = []
     rows = fen.split(' ')[0].split('/')
 
     for row in rows:
@@ -42,7 +42,7 @@ def parse_fen_full(fen: str) -> Tuple[List[List[Optional[str]]], str, str, str, 
 
     return board, turn, castling, en_passant, halfmove_clock, fullmove_number, promotion
 
-def generate_fen(board: List[List[Optional[str]]], turn: str, castling: str, en_passant: str, halfmove_clock: int, fullmove_number: int, promotion: str) -> str:
+def generate_fen(board:BOARD, turn: str, castling: str, en_passant: str, halfmove_clock: int, fullmove_number: int, promotion: str) -> str:
     """Generate a FEN string from a 2D board representation."""
     fen:str = ""
 
@@ -85,6 +85,18 @@ def translate_to_board():
     ]
 
     return py_board
+
+def find_piece(board: BOARD, piece: str):
+    # Iterate through rows (y) and columns (x)
+    for y, row in enumerate(board):
+        for x, cell in enumerate(row):
+            if cell == piece:
+                return (y, x) # Returns (column, row)
+    return None
+
+
+
+
 #====================================================
 # Game Notations
 #====================================================

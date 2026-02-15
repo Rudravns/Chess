@@ -1,9 +1,10 @@
 import os
+from numpy import save
 import pygame
 from typing import * # pyright: ignore[reportWildcardImportFromLibrary]
 from Data_types import *
-
-
+import json
+import base_data
 pygame.init()
 pygame.display.init()
 pygame.font.init()
@@ -119,6 +120,35 @@ def load_sound(path: str) -> pygame.mixer.Sound:
     except pygame.error as e:
         raise FileNotFoundError(f"Unable to load sound at '{path}': {e}") from e
 
+def get_data(name: str = "settings"):
+    """Load an .json file from disk."""
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path  = os.path.abspath(
+            os.path.join(script_dir, "..", "..", "data", name)
+        )
+        # Open and load the JSON file
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data
+    
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        match name:
+            case "settings":
+                save_data(base_data.settings, name)
+                return base_data.settings
+            case _:
+                raise FileNotFoundError(f"Unable to find JSON at {name}: {e}") from e           
+
+def save_data(data, name: str = "settings"):
+    """Save an .json file from disk."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path  = os.path.abspath(
+        os.path.join(script_dir, "..", "..", "data", name)
+    )
+    # Open and load the JSON file
+    with open(file_path, 'w') as json_file:
+        json.dump(data, json_file, indent=2)
 
 
 # =====================================================
