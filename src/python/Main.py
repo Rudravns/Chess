@@ -35,6 +35,8 @@ class App:
         self.Picked_up_piece: Pieces.Piece | None = None
         self.Turn = Pieces.PieceColor.WHITE
         self.Fen = self.settings["FEN"]
+        self.FENS = [self.Fen]
+
 
 
         for row in range(8):
@@ -130,7 +132,6 @@ class App:
                            pygame.RESIZABLE)
 
 
-            self.Fen = Notation.generate_fen(self.board, ('w' if self.Turn == Pieces.PieceColor.WHITE else 'b'), "KQkq", Notation.en_passant_square, Notation.Black_moves, Notation.White_moves, "")
             
 
         
@@ -144,8 +145,7 @@ class App:
         mouse_pos = pygame.mouse.get_pos()
         mouse_down = pygame.mouse.get_pressed()[0]
 
-        # Sync engine board
-        Translate.engine.SetBoardFromFEN(self.Fen)
+        
 
         # -------------------------------------------------
         # PROMOTION UI (BLOCK GAME)
@@ -207,8 +207,7 @@ class App:
 
         if self.Turn == Pieces.PieceColor.WHITE:
             white_king_pos = Notation.find_piece(self.board, 'K')
-            white_king = self.pieces[white_king_pos[0]][white_king_pos[1]] # type: ignore
-
+            white_king = self.pieces[white_king_pos[0]][white_king_pos[1]]  # pyright: ignore[reportOptionalSubscript]
             
             if not self.board[7][0] == 'R':
                 white_king.piece_type["CanCastleQueenside"] = False # pyright: ignore[reportOptionalMemberAccess]
@@ -220,7 +219,7 @@ class App:
         #now black king
         if self.Turn == Pieces.PieceColor.BLACK:
             black_king_pos = Notation.find_piece(self.board, 'k')
-            black_king = self.pieces[black_king_pos[0]][black_king_pos[1]] # type: ignore
+            black_king = self.pieces[black_king_pos[0]][black_king_pos[1]] # pyright: ignore[reportOptionalSubscript]
             if not self.board[0][0] == 'r':
                 black_king.piece_type["CanCastleQueenside"] = False   # pyright: ignore[reportOptionalMemberAccess]
             Translate.engine.DisableCastling(False, False)
@@ -289,6 +288,7 @@ class App:
         # -------------------------------------------------
         # Drop logic
         # -------------------------------------------------
+        # Inside update_board's "Drop logic" in Main.py
         if not mouse_down and self.Picked_up_piece:
             old_col = self.Picked_up_piece.col
             old_row = self.Picked_up_piece.row
@@ -296,14 +296,22 @@ class App:
             new_row = mouse_pos[1] // square_size
 
             if (new_col, new_row) in legal_moves:
-                # EN PASSANT
-                if (
-                    self.board[old_row][old_col].lower() == "p" # pyright: ignore[reportOptionalMemberAccess]
-                    and self.board[new_row][new_col] is None
-                    and new_col != old_col
-                ):
-                    self.pieces[old_row][new_col] = None
-                    self.board[old_row][new_col] = None
+                # Check for double pawn push to set En Passant square
+                ep_square = "-"
+                if self.Picked_up_piece.piece_type["type"] == "pawn":
+                    if abs(new_row - old_row) == 2:
+                        # The square skipped over is the EP target
+                        ep_rank = 8 - (old_row + new_row) // 2
+                        ep_file = chr(ord('a') + new_col)
+                        ep_square = f"{ep_file}{ep_rank}"
+                        Notation.en_passant_square = ep_square # Update your global notation
+                    
+                    # Handle the actual capture of the pawn in En Passant
+                    # If moving diagonally to an empty square, it's en passant
+                    if old_col != new_col and self.board[new_row][new_col] is None:
+                        capture_row = old_row
+                        self.pieces[capture_row][new_col] = None
+                        self.board[capture_row][new_col] = None
 
                 # Move
                 self.pieces[old_row][old_col] = None
@@ -311,7 +319,7 @@ class App:
                 self.board[new_row][new_col] = self.board[old_row][old_col]
                 self.board[old_row][old_col] = None
                 self.Picked_up_piece.set_position(new_col, new_row)
-            
+                
 
                 # CASTLING
                 if self.Picked_up_piece.piece_type["type"] == "king":
@@ -320,7 +328,7 @@ class App:
                     
                     if abs(old_col - new_col) == 2:
 
-                        if old_col > new_col and self.Picked_up_piece.piece_type["CanCastleQueenside"]:
+                        if old_col > new_col and self.Picked_up_piece.piece_type["can_castle_queenside"]:
                             rook = self.pieces[old_row][0]
                             rook.set_position(3, old_row) # pyright: ignore[reportOptionalMemberAccess]
                             self.pieces[old_row][3] = rook
@@ -328,7 +336,7 @@ class App:
                             self.pieces[old_row][0] = None
                             self.board[old_row][3] = "R" if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else "r"
                             
-                        elif old_col < new_col and self.Picked_up_piece.piece_type["CanCastleKingside"]:
+                        elif old_col < new_col and self.Picked_up_piece.piece_type["can_castle_kingside"]:
                             rook = self.pieces[old_row][7]
                             rook.set_position(5, old_row) # pyright: ignore[reportOptionalMemberAccess] 
                             self.pieces[old_row][5] = rook
@@ -336,8 +344,8 @@ class App:
                             self.pieces[old_row][7] = None
                             self.board[old_row][5] = "R" if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else "r"
                             
-                    self.Picked_up_piece.piece_type["CanCastleKingside"] = False
-                    self.Picked_up_piece.piece_type["CanCastleQueenside"] = False
+                    self.Picked_up_piece.piece_type["can_castle_kingside"] = False
+                    self.Picked_up_piece.piece_type["can_castle_queenside"] = False
                     Translate.engine.DisableCastling(True, True) if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else Translate.engine.DisableCastling(False, True)
                     Translate.engine.DisableCastling(True, False) if self.Picked_up_piece.color == Pieces.PieceColor.WHITE else Translate.engine.DisableCastling(False, False)
                               
@@ -351,6 +359,8 @@ class App:
                     self.promotion_pawn = self.Picked_up_piece
                     self.Picked_up_piece = None
                     return
+                
+                self.update_fen(ep_square)
 
                 # Switch turn
                 self.Turn = (
@@ -509,6 +519,50 @@ class App:
 
         return None
 
+    def update_fen(self, move_ep_square):
+
+        if self.Turn == Pieces.PieceColor.WHITE:
+            Notation.White_moves += 1
+        else:
+            Notation.Black_moves += 1
+
+
+        white_king_pos = Notation.find_piece(self.board, 'K')
+        white_king = self.pieces[white_king_pos[0]][white_king_pos[1]]  # pyright: ignore[reportOptionalSubscript]
+
+        black_king_pos = Notation.find_piece(self.board, 'k')
+        black_king = self.pieces[black_king_pos[0]][black_king_pos[1]] # pyright: ignore[reportOptionalSubscript]
+
+        castle = ""
+        if white_king.piece_type["can_castle_kingside"]: # pyright: ignore[reportOptionalMemberAccess]
+            castle += "K"
+        if white_king.piece_type["can_castle_queenside"]: # pyright: ignore[reportOptionalMemberAccess]
+            castle += "Q"
+        if black_king.piece_type["can_castle_kingside"]: # pyright: ignore[reportOptionalMemberAccess]
+            castle += "k"   
+        if black_king.piece_type["can_castle_queenside"]: # pyright: ignore[reportOptionalMemberAccess]
+            castle += "q"
+        if castle == "":
+            castle = "-"
+        
+        
+        current_ep = move_ep_square 
+    
+        # Generate the FEN with the new EP square
+        self.Fen = Notation.generate_fen(
+            self.board, 
+            ('w' if self.Turn == Pieces.PieceColor.WHITE else 'b'), 
+            castle, 
+            current_ep, # This is the key!
+            Notation.Black_moves, 
+            Notation.White_moves, 
+            ""
+        )
+        # Reset the global tracker so the next move doesn't accidentally reuse it
+        Notation.en_passant_square = "-" 
+        print(self.Fen)
+        self.FENS.append(self.Fen)
+        Translate.engine.SetBoardFromFEN(self.Fen)
 
 
 if __name__ == "__main__":

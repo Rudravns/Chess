@@ -4,5 +4,6 @@ settings = {
     "Board style" : "class",
     "Console debug" : True,
     "username": "GRANDMASTERMIND",
-    "elo": 1500
+    "elo": 1500,
+    "games played" : 0,
 }

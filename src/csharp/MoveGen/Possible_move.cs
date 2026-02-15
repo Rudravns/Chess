@@ -220,28 +220,24 @@ namespace Possible_moves
         }
 
         //  Pawn moves helper
-        private void AddPawnMoves(
-            List<Tuple<int, int>> moves,
-            int col,
-            int row,
-            bool isWhite,
-            List<List<string?>> board
-        )
+        // Inside Possible_move.cs -> AddPawnMoves method
+        private void AddPawnMoves(List<Tuple<int, int>> moves, int col, int row, bool isWhite, List<List<string?>> board)
         {
             int dir = isWhite ? -1 : 1;
             int startRow = isWhite ? 6 : 1;
 
+            // 1. Forward Move
             int oneStepRow = row + dir;
             if (InBounds(col, oneStepRow) && board[oneStepRow][col] == null)
             {
                 moves.Add(Tuple.Create(col, oneStepRow));
-
+                // 2. Double Step
                 int twoStepRow = row + dir * 2;
                 if (row == startRow && board[twoStepRow][col] == null)
                     moves.Add(Tuple.Create(col, twoStepRow));
             }
 
-            // Diagonal captures
+            // 3. Diagonal Captures
             foreach (int dx in new[] { -1, 1 })
             {
                 int x = col + dx;
@@ -249,18 +245,16 @@ namespace Possible_moves
                 if (!InBounds(x, y)) continue;
 
                 string? target = board[y][x];
+                // Standard capture
                 if (target != null && char.IsUpper(target[0]) != isWhite)
                     moves.Add(Tuple.Create(x, y));
-            }
 
-            // En passant
-            var ep = engine.EnPassantSquare;
-            if (ep != null)
-            {
-                int epX = ep.Item1;
-                int epY = ep.Item2;
-                if (epY == row + dir && Math.Abs(epX - col) == 1)
-                    moves.Add(Tuple.Create(epX, epY));
+                // 4. EN PASSANT LOGIC
+                var ep = engine.EnPassantSquare;
+                if (ep != null && ep.Item1 == x && ep.Item2 == y)
+                {
+                    moves.Add(Tuple.Create(x, y));
+                }
             }
         }
 

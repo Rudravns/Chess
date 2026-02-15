@@ -4,5 +4,6 @@
   "Board style": "green",
   "Console debug": false,
   "username": "GRANDMASTERMIND",
-  "elo": 1500
+  "elo": 1500,
+  "games played" : 0
 }
