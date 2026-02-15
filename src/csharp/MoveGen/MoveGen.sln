@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11415.281 d18.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoveGen", "MoveGen.csproj", "{C92B7EB2-DB27-A3F7-FFB1-EA964E6C9F6F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C92B7EB2-DB27-A3F7-FFB1-EA964E6C9F6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C92B7EB2-DB27-A3F7-FFB1-EA964E6C9F6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C92B7EB2-DB27-A3F7-FFB1-EA964E6C9F6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C92B7EB2-DB27-A3F7-FFB1-EA964E6C9F6F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {03F80296-7B8C-461D-8274-666D17C0B8DC}
+	EndGlobalSection
+EndGlobal

@@ -283,16 +283,34 @@ class App:
             self.Picked_up_piece = None
 
     def draw_board_only(self, white_square_color, black_square_color, square_size):
+        king_pos = None
+
+        # Find king position
+        for row in self.pieces:
+            for p in row:
+                if p and p.piece_type['type'] == 'king' and p.color == self.Turn:
+                    king_pos = (p.col, p.row)
+                    break
+
         for row in range(8):
             for col in range(8):
                 rect = pygame.Rect(col*square_size, row*square_size, square_size, square_size)
-                color = white_square_color if (row + col) % 2 == 0 else black_square_color
+
+                base_color = white_square_color if (row + col) % 2 == 0 else black_square_color
+
+                # Only highlight king square if in check
+                if king_pos == (col, row) and self.is_in_check(self.Turn):
+                    color = CHECK
+                else:
+                    color = base_color
+
                 pygame.draw.rect(self.screen, pygame.Color(color), rect)
 
                 piece = self.pieces[row][col]
                 if piece:
                     img = piece.piece_type["img"].scale((square_size, square_size))
                     img.draw(rect.topleft)
+
 
     def is_in_check(self, color):
         king = None
@@ -303,7 +321,9 @@ class App:
                     break
         if king is None:
             return False
-        return Translate.engine.SquareUnderAttack(king.col, king.row, king.color == Pieces.PieceColor.WHITE)
+        check = Translate.engine.SquareUnderAttack(king.col, king.row, king.color == Pieces.PieceColor.WHITE)
+        #if check: pygame.draw.rect(self.screen, CHECK, ())
+        return check
 
     def is_checkmate(self, color):
         if not self.is_in_check(color):
