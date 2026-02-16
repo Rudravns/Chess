@@ -80,7 +80,7 @@ def render_text(
     font.set_underline(underline)
 
     # Render text
-    text_surface = font.render(text, True, color)
+    text_surface = font.render(str(text), True, color)
     text_rect = text_surface.get_rect(topleft=position)
 
     if draw:
@@ -150,6 +150,31 @@ def save_data(data, name: str = "settings"):
     with open(file_path, 'w') as json_file:
         json.dump(data, json_file, indent=2)
 
+def save_game(data, game_num):
+    """Save game in .json file from disk."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path  = os.path.abspath(
+        os.path.join(script_dir, "..", "..", "games", str(game_num)+".json")
+    )
+    # Open and load the JSON file
+    with open(file_path, 'w') as json_file:
+        json.dump(data, json_file, indent=2)
+
+def get_game_data(game_num):
+    """Load an .json file from disk."""
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path  = os.path.abspath(
+            os.path.join(script_dir, "..", "..", "games", str(game_num)+".json")
+        )
+        # Open and load the JSON file
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data
+    
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        save_game(base_data.game_attr, str(game_num))
+        return base_data.game_attr    
 
 # =====================================================
 # Sprite Sheets

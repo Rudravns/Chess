@@ -1,7 +1,7 @@
 {
   "fps": 120,
   "FEN": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-  "Board style": "green",
+  "Board style": "moss",
   "Console debug": false,
   "username": "GRANDMASTERMIND",
   "elo": 1500,

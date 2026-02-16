@@ -1,5 +1,4 @@
 # Main.py
-from pkgutil import get_data
 import pygame
 import sys,os
 from Helper import *
@@ -30,12 +29,39 @@ class App:
 
         #pieces init
         Pieces.init()
-        self.board = Notation.parse_fen(self.settings["FEN"])
+        self.game_num = self.settings["games played"]
+        
+        self.game_data = get_game_data(game_num=self.game_num)
         self.pieces: list[list[Pieces.Piece | None]] = []
         self.Picked_up_piece: Pieces.Piece | None = None
-        self.Turn = Pieces.PieceColor.WHITE
-        self.Fen = self.settings["FEN"]
-        self.FENS = [self.Fen]
+        self.Fen = self.game_data["FEN"]
+        self.FENS = self.game_data["FENS"]
+        self.PGN = self.game_data["PGN"]
+        self.move_pgn = []
+        self.pgn_scroll_y = 0
+        self.move_counter = 1
+        # FIX: Set move_counter based on existing PGN data
+        if self.PGN:
+            # Get the highest move number currently in the dictionary
+            existing_moves = [int(k) for k in self.PGN.keys()]
+            if existing_moves:
+                max_move = max(existing_moves)
+                # If Black hasn't moved yet in the last turn, we are still on that move number
+                if len(self.PGN[str(max_move)]) < 2:
+                    self.move_counter = max_move
+                else:
+                    self.move_counter = max_move + 1
+            else:
+                self.move_counter = 1
+        else:
+            self.move_counter = 1
+
+        self.Turn = Pieces.PieceColor.WHITE if Notation.parse_fen_full(self.Fen)[1] == 'w' else Pieces.PieceColor.BLACK
+        self.board = Notation.parse_fen(self.Fen)
+        Translate.engine.SetBoardFromFEN(self.Fen)
+        print(self.Fen)
+        
+        
 
 
 
@@ -101,8 +127,11 @@ class App:
 
             # drawing
             board_color = get_color(self.settings["Board style"])
+            h, w = self.screen.get_size()
+            square_size = min(h // 8, w // 8)
+
             self.update_board(white_square_color=board_color[0], black_square_color=board_color[1])
-            
+            self.draw_pgn(square_size)
             # text
             render_text(
                 text=f"FPS: {round(self.clock.get_fps())}",
@@ -130,12 +159,14 @@ class App:
                        self.screen = pygame.display.set_mode(
                            get_fullscreen() if self.screen.get_size() != get_fullscreen() else (self.last_width, self.last_height),  
                            pygame.RESIZABLE)
-
-
-            
-
-        
-            
+                       
+                # MOUSE WHEEL SCROLLING
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 4: # Scroll Up
+                        self.pgn_scroll_y += 20
+                    if event.button == 5: # Scroll Down
+                        self.pgn_scroll_y -= 20
+                    
             pygame.display.flip()
       
     def update_board(self, white_square_color: ColorType, black_square_color: ColorType):
@@ -157,17 +188,24 @@ class App:
             if mouse_down:
                 promoted_piece = self.handle_promotion_click(mouse_pos)
                 if promoted_piece:
-                    r = self.promotion_pawn.row # pyright: ignore[reportOptionalMemberAccess]
+                    r = self.promotion_pawn.row  # pyright: ignore[reportOptionalMemberAccess]
                     c = self.promotion_pawn.col # pyright: ignore[reportOptionalMemberAccess]
 
                     promoted_piece.set_position(c, r)
                     self.pieces[r][c] = promoted_piece
+                    # Update the board array symbol
                     self.board[r][c] = promoted_piece.piece_type["symbol"] if promoted_piece.color == Pieces.PieceColor.WHITE else promoted_piece.piece_type["symbol"].lower()
+                    
+                    if self.move_pgn:
+                        self.move_pgn[-1] += "=" + promoted_piece.piece_type["symbol"].upper()
 
                     self.awaiting_promotion = False
                     self.promotion_pawn = None
 
-                    # Switch turn AFTER promotion
+                    # 🔹 ADD THIS: Tell the engine about the new Queen/Rook/etc.
+                    self.update_fen("-") 
+
+                    # Switch turn AFTER promotion and engine update
                     self.Turn = (
                         Pieces.PieceColor.BLACK
                         if self.Turn == Pieces.PieceColor.WHITE
@@ -314,11 +352,44 @@ class App:
                         self.board[capture_row][new_col] = None
 
                 # Move
+                #first update PGN
+                # --- Inside update_board's "Drop logic" ---
+        if not mouse_down and self.Picked_up_piece:
+            old_col = self.Picked_up_piece.col
+            old_row = self.Picked_up_piece.row
+            new_col = mouse_pos[0] // square_size
+            new_row = mouse_pos[1] // square_size
+
+            if (new_col, new_row) in legal_moves:
+                # ... (Keep your En Passant logic here) ...
+
+                # --- NEW PGN GENERATION WITH CHECK DETECTION ---
+                pgn = ""
+                piece_symbol = self.board[old_row][old_col]
+                target_piece = self.board[new_row][new_col]
+                target_square = Notation.convert_position_to_notation(new_col, new_row)
+                start_square = Notation.convert_position_to_notation(old_col, old_row)
+
+                if piece_symbol.upper() == 'K' and abs(old_col - new_col) == 2: # pyright: ignore[reportOptionalMemberAccess]
+                    pgn = "O-O" if new_col > old_col else "O-O-O"
+                else:
+                    if piece_symbol.upper() != 'P': pgn += piece_symbol.upper() # pyright: ignore[reportOptionalMemberAccess]
+                    is_capture = target_piece is not None or (piece_symbol.upper() == 'P' and old_col != new_col) # pyright: ignore[reportOptionalMemberAccess]
+                    if is_capture:
+                        if piece_symbol.upper() == 'P': pgn += start_square[0] # pyright: ignore[reportOptionalMemberAccess]
+                        pgn += "x"
+                    pgn += target_square
+                
+                self.move_pgn.append(pgn)
+
+                # --- Now finalize the move ---
                 self.pieces[old_row][old_col] = None
                 self.pieces[new_row][new_col] = self.Picked_up_piece
                 self.board[new_row][new_col] = self.board[old_row][old_col]
                 self.board[old_row][old_col] = None
                 self.Picked_up_piece.set_position(new_col, new_row)
+
+                
                 
 
                 # CASTLING
@@ -397,7 +468,6 @@ class App:
         if king is None:
             return False
         check = Translate.engine.SquareUnderAttack(king.col, king.row, king.color == Pieces.PieceColor.WHITE)
-        #if check: pygame.draw.rect(self.screen, CHECK, ())
         return check
 
     def is_checkmate(self, color):
@@ -520,14 +590,17 @@ class App:
         return None
 
     def update_fen(self, move_ep_square):
-
+        # Logic for turn increment
         if self.Turn == Pieces.PieceColor.WHITE:
             Notation.White_moves += 1
         else:
             Notation.Black_moves += 1
 
 
-        white_king_pos = Notation.find_piece(self.board, 'K')
+
+
+
+        white_king_pos = Notation.find_piece(self.board, 'K') 
         white_king = self.pieces[white_king_pos[0]][white_king_pos[1]]  # pyright: ignore[reportOptionalSubscript]
 
         black_king_pos = Notation.find_piece(self.board, 'k')
@@ -551,7 +624,7 @@ class App:
         # Generate the FEN with the new EP square
         self.Fen = Notation.generate_fen(
             self.board, 
-            ('w' if self.Turn == Pieces.PieceColor.WHITE else 'b'), 
+            ('b' if self.Turn == Pieces.PieceColor.WHITE else 'w'), 
             castle, 
             current_ep, # This is the key!
             Notation.Black_moves, 
@@ -560,10 +633,215 @@ class App:
         )
         # Reset the global tracker so the next move doesn't accidentally reuse it
         Notation.en_passant_square = "-" 
-        print(self.Fen)
+        #print(self.Fen)
+        
         self.FENS.append(self.Fen)
         Translate.engine.SetBoardFromFEN(self.Fen)
 
+        # Check for check/checkmate
+        opp_color = Pieces.PieceColor.BLACK if self.Turn == Pieces.PieceColor.WHITE else Pieces.PieceColor.WHITE
+        suffix = ""
+        if self.is_checkmate(opp_color):
+            suffix = "#"
+        elif self.is_in_check(opp_color):
+            suffix = "+"
+        
+        if self.move_pgn:
+            self.move_pgn[-1] += suffix
+
+        m_key = str(self.move_counter)
+        if m_key not in self.PGN:
+            self.PGN[m_key] = []
+
+        if self.move_pgn:
+            new_move = self.move_pgn[-1]
+            if len(self.PGN[m_key]) < (1 if self.Turn == Pieces.PieceColor.WHITE else 2):
+                self.PGN[m_key].append(new_move)
+
+        if self.Turn == Pieces.PieceColor.BLACK:
+            self.move_counter += 1
+            self.move_pgn = []
+
+        self.game_data["FEN"] = self.Fen
+        self.game_data["FENS"] = self.FENS
+        self.game_data["White won"] = (suffix == "#" and self.Turn == Pieces.PieceColor.WHITE)
+        self.game_data["Black won"] = (suffix == "#" and self.Turn == Pieces.PieceColor.BLACK)
+        self.game_data["PGN"] = self.PGN
+
+        # Auto-scroll to bottom on new move
+        self.pgn_scroll_y = -100000
+        
+        save_game(self.game_data, self.game_num)
+
+    def rollback(self, move_num, color_idx):
+        """
+        Revert game state to a specific move.
+        move_num: The move number (key in PGN).
+        color_idx: 0 for White, 1 for Black.
+        """
+        # Calculate index in FENS list
+        # FENS[0] is start. FENS[1] is after White move 1. FENS[2] is after Black move 1.
+        fen_index = (move_num * 2) - 1 + color_idx
+        
+        if fen_index >= len(self.FENS):
+            return
+
+        # 1. Slice FENS history
+        self.FENS = self.FENS[:fen_index+1]
+        self.Fen = self.FENS[-1]
+        
+        # 2. Slice PGN history
+        # Remove all keys greater than the selected move number
+        keys_to_remove = [k for k in self.PGN.keys() if int(k) > move_num]
+        for k in keys_to_remove:
+            del self.PGN[k]
+            
+        # If we rolled back to White's move, remove Black's move from this entry
+        if color_idx == 0:
+            if str(move_num) in self.PGN:
+                self.PGN[str(move_num)] = [self.PGN[str(move_num)][0]]
+        
+        # 3. Restore Board State
+        self.board = Notation.parse_fen(self.Fen)
+        
+        # 4. Reset Engine (to restore castling rights which default to True on new engine)
+        Translate.engine = Translate.load_engine()
+        Translate.engine.SetBoardFromFEN(self.Fen)
+        
+        # 5. Parse FEN to restore variables
+        _, turn_char, castling, ep, half, full, _ = Notation.parse_fen_full(self.Fen)
+        
+        self.Turn = Pieces.PieceColor.WHITE if turn_char == 'w' else Pieces.PieceColor.BLACK
+        Notation.White_moves = full
+        Notation.Black_moves = half
+        Notation.en_passant_square = ep
+        
+        # Sync Engine Castling Rights with FEN
+        if 'K' not in castling: Translate.engine.DisableCastling(True, True)
+        if 'Q' not in castling: Translate.engine.DisableCastling(True, False)
+        if 'k' not in castling: Translate.engine.DisableCastling(False, True)
+        if 'q' not in castling: Translate.engine.DisableCastling(False, False)
+
+        # 6. Rebuild Pieces Objects
+        self.pieces = []
+        self.init_pieces_from_board() # Helper function we will create/use logic from init
+
+        # 7. Reset counters
+        self.move_counter = move_num if color_idx == 0 else move_num + 1
+        self.move_pgn = []
+        self.Picked_up_piece = None
+        self.awaiting_promotion = False
+
+    def draw_pgn(self, square_size):
+        # 1. Setup dimensions
+        panel_x = square_size * 8 + scale(20)
+        panel_y = scale(60) # Pushed down to leave room for header
+        panel_width = self.screen.get_width() - panel_x - scale(20)
+        panel_height = self.screen.get_height() - panel_y - scale(40)
+        
+        if panel_width < scale(150): return
+
+        # Draw Background Box
+        full_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+        pygame.draw.rect(self.screen, (25, 25, 25), full_rect, border_radius=5)
+        
+        # Header (static, above the scrolling box)
+        render_text("Move History", (panel_x, panel_y - scale(35)), size=24, color=(200, 200, 200), bold=True)
+
+        # 2. Setup Clipping (This prevents text from bleeding out of the box)
+        # We define the inner area where moves are visible
+        move_clip_rect = pygame.Rect(panel_x + 5, panel_y + 10, panel_width - 10, panel_height - 20)
+        self.screen.set_clip(move_clip_rect)
+
+        line_height = scale(30)
+        
+        # Clamp scrolling
+        total_height = len(self.PGN) * line_height
+        view_height = panel_height - 20
+        min_scroll = min(0, view_height - total_height)
+        self.pgn_scroll_y = max(min_scroll, min(0, self.pgn_scroll_y))
+
+        # Start drawing based on scroll offset
+        start_y = panel_y + 10 + self.pgn_scroll_y
+        
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = pygame.mouse.get_pressed()[0]
+
+        # 3. Draw the PGN moves
+        # self.PGN is a dict: {"0": ["e4", "e5"], "1": ["d4", "d5"]}
+        sorted_moves = sorted(self.PGN.keys(), key=lambda x: int(x))
+
+        for move_idx in sorted_moves:
+            moves = self.PGN[move_idx]
+            
+            # Subtract 1 so move #1 starts at index 0 for Y-coordinate math
+            display_row = int(move_idx) - 1
+            row_y = start_y + (display_row * line_height)
+            
+            # Optimization: Don't render if off screen
+            if row_y < panel_y - line_height or row_y > panel_y + panel_height:
+                continue
+
+            # Move Number
+            render_text(f"{move_idx}.", (panel_x + scale(10), row_y), size=int(scale(20)), color=(100, 100, 100))
+            
+            # White Move (Clean string)
+            if len(moves) > 0:
+                # Ensure we handle if the move is stored as a list accidentally
+                txt = moves[0] if isinstance(moves[0], str) else str(moves[0])
+                surf, rect = render_text(txt, (panel_x + scale(50), row_y), size=int(scale(20)), color=(255, 255, 255), draw=False)
+                
+                # Interaction
+                if rect.collidepoint(mouse_pos):
+                    pygame.draw.rect(self.screen, (70, 70, 70), rect, border_radius=3)
+                    if mouse_click:
+                        self.rollback(int(move_idx), 0)
+                        self.screen.set_clip(None)
+                        return
+                
+                self.screen.blit(surf, rect)
+            
+            # Black Move (Clean string)
+            if len(moves) > 1:
+                txt = moves[1] if isinstance(moves[1], str) else str(moves[1])
+                surf, rect = render_text(txt, (panel_x + scale(130), row_y), size=int(scale(20)), color=(200, 200, 200), draw=False)
+                
+                # Interaction
+                if rect.collidepoint(mouse_pos):
+                    pygame.draw.rect(self.screen, (70, 70, 70), rect, border_radius=3)
+                    if mouse_click:
+                        self.rollback(int(move_idx), 1)
+                        self.screen.set_clip(None)
+                        return
+
+                self.screen.blit(surf, rect)
+
+        # Reset clip so other UI elements draw normally
+        self.screen.set_clip(None)
+
+        # 4. Draw Top and Bottom "Fade" or Border Rects
+        # These hide the text as it scrolls "under" the header/footer
+        pygame.draw.rect(self.screen, (60, 60, 60), full_rect, width=2, border_radius=5)
+
+    def init_pieces_from_board(self):
+        # Re-uses logic from __init__ to rebuild piece objects from self.board
+        for row in range(8):
+            lane: list[Pieces.Piece | None] = []
+            for col in range(8):
+                piece_symbol = self.board[row][col]
+                piece: Pieces.Piece | None = None
+                if piece_symbol is not None:
+                    color = Pieces.PieceColor.WHITE if piece_symbol.isupper() else Pieces.PieceColor.BLACK
+                    symbol = piece_symbol.upper()
+                    for pt in Pieces.PieceType.__dict__.values():
+                        if isinstance(pt, dict) and pt["symbol"] == symbol:
+                            piece = Pieces.Piece(pt, color)
+                            piece.set_position(col, row)
+                            # Note: Castling rights on Piece objects are updated in update_board loop
+                            # based on position, but we rely on Engine for logic.
+                            break
+                lane.append(piece)
+            self.pieces.append(lane)
 
 if __name__ == "__main__":
     os.system('cls' if os.name == 'nt' else 'clear')

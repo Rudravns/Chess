@@ -4,6 +4,9 @@ from pythonnet import load
 import Notation
 import Data_types
 
+debug = False
+
+
 def setup_dotnet_runtime():
     """Load the .NET Core runtime before using clr."""
     load("coreclr")
@@ -37,14 +40,14 @@ def load_engine():
 
     try:
         clr.AddReference("MoveGen") # pyright: ignore[reportAttributeAccessIssue]
-        print("C# assembly loaded successfully.")
+        if debug: print("C# assembly loaded successfully.")
     except Exception as e:
         raise RuntimeError(f"Failed to load C# assembly: {e}")
 
     try:
         from MoveGen import Engine # pyright: ignore[reportMissingImports]
         engine = Engine()
-        print("C# Engine instantiated successfully!")
+        if debug: print("C# Engine instantiated successfully!")
         return engine
     except Exception as e:
         raise ImportError(
@@ -54,8 +57,8 @@ def load_engine():
 
 def test_engine(engine):
     """Run simple tests to verify integration."""
-    print(engine.Hello())
-    print("2 + 3 =", engine.Add(2, 3))
+    if debug: print(engine.Hello())
+    if debug: print("2 + 3 =", engine.Add(2, 3))
 
 engine = load_engine()
 engine.SetBoardFromFEN(Data_types.START_FEN)
@@ -66,10 +69,10 @@ engine.SetBoardFromFEN(Data_types.START_FEN)
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
     test_engine(engine)
-    print("\n\n")
+    if debug: print("\n\n")
     engine.SetBoardFromFEN(Data_types.START_FEN)
     
 
     moves = engine.GetLegalMoves(0, 1)
     py_moves = [(m.Item1, m.Item2) for m in moves]
-    print(py_moves)
+    if debug: print(py_moves)

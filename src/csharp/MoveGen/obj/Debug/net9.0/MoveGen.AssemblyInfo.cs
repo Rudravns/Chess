@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MoveGen")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c96c9814260d43bd603717c8ddf4cedc3133a3ef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c387913f76033d42db4953e112934e3c19621cfb")]
 [assembly: System.Reflection.AssemblyProductAttribute("MoveGen")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MoveGen")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
